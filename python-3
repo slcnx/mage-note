@@ -1,3 +1,4 @@
+第一天
 1）运算
 +
 -
@@ -248,4 +249,39 @@ for i in range(0, 10):
     else:
         print(i)
 
+continue 是跳过后面的，即本轮循环体后的语句
+for i in range(0, 10):
+    print(i)
+    if i % 2 == 1:
+        continue
+    print('i is {}, i+1 is {}'.format(i, i+1))
 
+5、else子句，跟循环语句配合
+循环没有提前退出时，所有元素遍历后会执行else子句。	
+for i in range(0, 10):
+    pass
+else:
+    print('ok')
+结果是 ok
+
+for i in range(0, 10):
+    break
+else:
+    print('ok')
+结果没有ok
+
+for i in range(0, 10):
+    continue
+else:
+    print('ok')
+结果有ok
+
+pass: 对语句块的点位，不需要点位。其它语言用空的花括号。
+
+作业：求100万以内的所有素数(质数)？ 
+
+退出python脚本
+--------------------------
+import sys
+sys.exit()
+--------------------------
