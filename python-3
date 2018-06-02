@@ -1,0 +1,67 @@
+1）运算
++
+-
+*
+/  python2: 整除 python3: 自然除 结果为float
+// 取整除 结果是整型
+** 次方
+%  前/后的余数
+
+python2实现python3的自然除？
+3 / 2
+float(3) / 2
+
+什么场景下用自然除，取整除？
+结果要求正确: 自然除
+结果要求向下整除: 取整除
+
+2）比较运算符
+==
+!=
+<
+>=
+>
+<=
+返回值都是bool类型
+>>> 3 > 5
+False
+>>> 5 > 3
+True
+>>> 5 != 3
+True
+>>> 3 == 3
+True
+
+3）逻辑运算符
+and
+or 
+not
+
+逻辑运算符的操作数是bool类型或者可以隐式转化成bool类型
+逻辑运算的返回值是bool类型
+python里面没有(&& || !)
+
+>>> True and False
+False
+>>> True or False
+True
+>>> not True
+False
+
+3.1 短路操作
+>>> def true():
+...     print('true')
+...     return True
+... 
+>>> def false():
+...     print('false')
+...     return False
+... 
+##or操作，所以前面是真，后面不会执行。
+>>> true() or false()
+true
+True
+##and操作, 前面假，后面不会执行。
+>>> false() and true()
+false
+False
