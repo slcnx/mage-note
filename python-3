@@ -232,5 +232,20 @@ eg:
 for i in range(0,10):
 	print(i)
 
-	
+
+3、break 提前终止循环
+for i in range(0, 10):
+    print(i)
+    if i % 2 == 1:
+        print('find it')
+        break
+
+4、continue 跳过本轮循环
+打印所有的偶数
+for i in range(0, 10):
+    if i % 2 == 1:
+        continue
+    else:
+        print(i)
+
 
