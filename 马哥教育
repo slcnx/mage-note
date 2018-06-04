@@ -3104,12 +3104,12 @@ LINGO：
 	没有udev的是正在使用的文件系统。
 
 3）man mkfs.btrfs
-	-A
-	-b
-	-d
-	-f
-	-n
-	-L 
+	-A|--alloc-start START
+	-b|--byte-count SIZE
+	-d|--data PROFILE
+	-f|--force
+	-n|--nodesize SIZE
+	-L|--label LABEL 
 
 4）mkfs.ext4 mkfs.xfs mkfs.btrfs mkswap
 
@@ -3127,12 +3127,14 @@ LINGO：
 	注意：格式化会删除原磁盘中所有数据。
 
    swap
-   	  1）调整id为82；Linux swap / Solaris
+   	  1）调整id为82；Linux swap / Solaris 
    	  2）mkswap  [-L label] [-u UUID] 分区
    	  3）blkid /dev/sda6
 
-   	  swapon
-   	  swapoff
+   	  swapon device
+   	  	-p, --priority priority between -1 and 32767 多个交换区，假如第一个在固态磁盘，优先级低。如果相同优先级，负载均衡。
+   	  	swapon -a 激活/etc/fstab定义所有的swap
+   	  swapoff device
    	  free 
 
 6）查看分区的属性信息
@@ -3175,7 +3177,7 @@ LINGO：
 	   ^FEATURE[,...] 关闭特性
 	-o  Default_mount_options  acl <c7默认有acl. c6需要手动打开>
 	   ^Default_mount_options
-	-u UUID 修改UUID号(uuidgen)
+	-U UUID 修改UUID号(uuidgen)
 
 11）dumpe2fs 
 	-h device 查看超级块
@@ -3221,66 +3223,134 @@ LINGO：
 
 	将文件系统 创建、修改、检测 写成博客
 
+接口类型、分区、fdisk
+	mkfs, tune2fs, blkid, e2label, dumpe2fs
+
+	vfs: 程序员和各种文件系统之间的中间层
+
+	2012 btrfs生产可用
 
 文件系统挂载与管理工具(01)_recv
 LINGO：
-1）
-2）
-3）
+1）使用文件系统需要挂载
+2）一切文件系统的访问入口：根
+3）内核管理并加载根
 4）
-5）
-6）
-7）
-8）
-9）
-10）
-11）
-12）
-13）
-14）
-15）
-16）
-17）
-18）
-19）
-20）
-21）
-22）
-23）
-24）
-25）
-26）
-27）
-28）
-29）
+5）开机流程：bootloader --> kernel --> 驱动rootfs --> /sbin/init --> 进程 --> 进程
+6）rootfs拥有FHS层级结构的目录: etc, bin, sbin, lib, lib64, proc, sys, dev, home, root, tmp, sys, usr, var
+7）进程树: pstree 启动Init后,任何进程是init的子进程, 进程还可以有子进程.
+	init
+		systemd
+		init(upstart)
+8）kernel首先加载根:
+	grep 'kernel' /etc/grub2.cfg /etc/grub.cfg
+	linux16 /vmlinuz-0-rescue-ae0c857634bf41edb100b808fea5cf5a root=/dev/mapper/centos-root ro crashkerne=auto rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet
+	内核就知道根分区的位置. root=
+9）挂载：将分区关联至根分区上的某个空目录, 空目录当作访问另一个文件系统的访问入口.
+	通过rootfs上mount命令实现
+10）卸载: 解除关联关系, umount
+11）把设备关联至 挂载点: Mount Point
+12）mount 设备 mount_point
+13）umount 设备|mount_point
+14）如果挂载前目录非空, 挂载后, 目录下原有的文件被暂时隐藏了. 直到卸载
+15）文件系统真正可用的空间取决于block + inode
+
 
 命令lcnix：
-1）
-2）
-3）
-4）
-5）
-6）
-7）
-8）
-9）
-10）
-11）
-12）
-13）
-14）
-15）
-16）
-17）
-18）
-19）
-20）
-21）
-22）
-23）
-24）
-25）
-26）
-27）
-28）
-29）
+1）mount 显示当前系统上所有已挂载的文件系统
+	伪文件系统
+		sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+		proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+		devtmpfs on /dev type devtmpfs (rw,nosuid,size=922444k,nr_inodes=230611,mode=755)
+		tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev)
+		devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+
+2）mount [-nrvw] [-t vfstype] [-o options] device dir
+	device: 
+		1）设备文件, 分区    如 /dev/sda
+		2）卷标：-L 'LABEL'  如 -L 'mydata'
+		3）UUID: -U 'UUID'   如 -U "8649374c-a064-427d-ac31-cfc229eac2d0"
+		4）伪文件系统名称：proc, sysfs, devtmpfs, tmpfs, devpts
+		5）目录： --bind dir
+	dir:
+		存在， 建议为空目录
+
+	-n 不更新/etc/mtab
+	-r/-w read-only, read-write
+	-v verbose
+	-t vfstype 指定device上的文件系统类型，可省略；
+	-a 自动挂载放在/etc/fstab文件中 定义了auto挂载选项的文件系统。
+	-L LABEL
+	-U UUID
+	--bind dir
+
+	例如：
+		mount -v /dev/sda5 /mnt
+		mount -U UUID /mnt
+		mount -L LABEL /mnt
+		mount -t ext4 -r /dev/sda5 /mnt
+		mount -n /dev/sda5 /mnt ; mount 不显示
+
+	-o options[,...] 设定挂载选项
+		defaults: 相当于 rw, suid, dev, exec, auto, nouser, and async
+		ro     Mount the filesystem read-only.
+		rw     Mount the filesystem read-write.
+		remount 不用卸载可直接对文件系统重新挂载。
+		async 不立即存回文件文件系统。 
+		sync  程序在内存中被操作后，立即存回文件系统；1）安全(断电) 2）性能差 3）对文件系统的写生命周期会缩短。
+		atime   更新文件的访问时间戮。1）增加IO     
+		noatime 不更新文件(目录+文件)的访问时间戮。会显著提升性能。ext4<默认>
+		diratime    
+		nodiratime 不更新目录的访问时间戮。可有可无(atime nodiratime 或 noatime)
+		auto  	Can be mounted with the -a option.
+		noauto
+		exec   
+		noexec 文件系统上应用程序不可运行为进程。挂载文件系统更安全
+		dev 	在被挂载的文件系统上可使用设备文件(b, c)。
+		nodev  
+		suid  
+		nosuid Do not Allow set-user-identifier or set-group-identifier bits to take effect. <更安全>
+        user   Allow  an ordinary user to mount the filesystem.(nodev, nosuid, noexec)
+        nouser 
+ 		acl 
+
+ 	例如：
+ 		mount -o remount,ro /dev/sda5
+
+3） umount {dir|device}...
+	正在使用设备不能卸载；
+		lsof dir
+		fuser -v dir
+	终止使用行为
+		fuser -km dir
+4）内存空间
+	free 
+		-k
+		-m
+		-g
+		-h
+		-t
+
+		used:
+			centos6: used - buffer - cache (第二行used)
+			centos7: used （第一行）
+		free:
+			centos6: free + buffer + cache - 不可回收部分 (第二行free)
+			centos7: available （第一行） 
+
+5）文件系统空间占用等信息的查看工具
+	df
+	-h, --human-readable
+	-P, --portability
+	-l, --local		只显示本机的文件系统
+	-i, --inodes		显示inode 信息而非块使用量
+
+	文件系统真正可用的空间取决于block + inode
+
+6）查看目录及目录下所有文件总空间占用状态	
+	du
+		-s, --summarize
+		-m   like --block-size=1M
+		-h, --human-readable
+
+		mount, umount, free, df, du, swapon, swapoff, fuser, lsof
