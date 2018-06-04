@@ -386,11 +386,10 @@ LINGO
 （6）有用的选项
 	-c clear the history list
 	-d OFFSET 删除命令历史中指定编号的命令。
-	-a 追加当前会话历史记录至历史文件。
-	-n 从历史文件读取未读取的历史行
-	-r	将历史文件中的内容追加至当前会话历史记录。
-     -w	write the current history to the history file
-    	and append them to the history list
+	-a 追加当前会话 新生成的历史记录至历史文件。
+	-n 从历史文件读取 未读取的历史行
+	-r	将历史文件中的 所有内容追加至当前会话历史记录。
+        -w	追加当前会话的 所有历史记录至历史文件。
 	
 （7）历史的快捷操作：
 	!#
