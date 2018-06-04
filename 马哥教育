@@ -2964,7 +2964,297 @@ LINGO：
 		-f force
 	partprobe wholedisk
 
-6）parted, sfdisk
+6）parted
+	parted device
+
+	获取子命令的帮助:
+		parted /dev/device help command
+
+	列出磁盘
+		~]# parted /dev/sda print 
+			devices
+			free
+			list, all
+	
+	parted /dev/sda help mklabel
+	创建
+		parted /dev/sda help mkpart
+		mkpart PART-TYPE [FS-TYPE] START END
+			PART-TYPE: primary, extend, logical
+			FS-TYPE:
+			START and END are disk locations, such as 4GB or 10%.  Negative values count from the end of the disk.  For example, -1s specifies exactly the last sector.
+
+			parted /dev/sda  mkpart logical 111GB 121GB
+	删除
+		parted /dev/sda help rm
+		parted /dev/sda rm NUMBER
+
+	注意创建后,不需要更新/proc/partitions
+
+7）sfdisk
+	分区大小: sfdisk -s
+	列出指定设备的所有分区: sfdisk -l [-u UNIT] /dev/sda, 如果省略/dev/device列出所有设备所有分区.
+		UNIT: S (扇区)，C (柱面)，B (块) 或 M (MB)
+
+	检测设备上的分区表: sfdisk -V /dev/sda 如果在脚本中, -q连用判断返回状态码即可.
+
+8）MBR和GPT分区表
+	1、单盘是否支持2T
+	2、支持分区数量是否大于4
+	3、GPT只能用在64位操作系统。
+	基于x86/64的Windows想要从GPT磁盘启动，主板的芯片组必须支持UEFI（这是强制性的，但是如果仅把GPT用作数据盘则无此限制）
+
+linux文件系统管理(04)_recv
+
+LINGO：
+1）分区后，存在一个很大的存储空间。
+2）实现按名存取：将存储空间分成：数据+元数据
+3）存储数据？
+	书，制作书架
+	需要组织机构
+	数据区分为多个块、每个块有编号
+
+4）文件系统：组织文件，在磁盘上存储。将文件存储在文件系统上某个位置。
+5）文件系统类型：组织文件格式有多种：
+	Linux：
+		CentOS 5: ext2 ext3 extend
+		CentOS 6: ext4
+		CentOS 7: xfs, btrfs
+		reiserfs, jfs
+		swap：交换分区
+		光盘：ISO9660
+		VFAT
+
+	Windows:
+		fat32(VFAT), ntfs
+
+	Unix: FFS, UFS, JFS2
+
+	网络：	NFS, CIFS
+
+	集群文件系统：GFS2(Global 红帽), OCFS2(ORACEL)
+
+	分布式文件系统：(除此之外都是内核级的)
+		内核 ceph
+		用户空间 moosefs, mogilefs, glusterfs
+
+
+6）交换分区：独立分区上，用于将磁盘作内存使用。
+	内存存储：按页(page)存储
+	虚拟内存：物理内存2G，32bits系统每个进程有4G可用，将有限2G分配给更多的进程使用。
+	避免某个进程耗尽物理内存前，将内存中不太常用的数据放在swap(将其格式为内存相同的格式)上。
+
+7）交换分区大小：
+	早期：物理内存1-1.5倍。
+	现在：2G或8G完全够用。
+	mysql, oracle：没有内存不要使用。物理内存64G-512G。
+	科学计算...：性能要求不高，交换内存可以更大。
+
+8）根据文件系统是否支持日志
+	日志型： ext3, ext4, ext4, btrfs, xfs, jfs, gfs, ocfs
+	非日志型: ext2, vfat(fat32)
+
+9）日志和非日志型区别
+	存储文件：
+		1、准备元数据：保存数据存储在哪些磁盘块
+			数据区分为多个块、每个块有编号
+		2、存储时，分配8个数据块，刚存储了5个块，系统断电了；
+			无日志：需要扫描整盘元数据区查找损坏的数据块，删除不能修复的数据块。
+			有日志：存储时，元数据先存储在日志区，数据存储完后，再复制到元数据区。如果中途断电，只需要扫描“日志区”，修复速度快。（挪元数据，会有额外的IO请求操作；但系统检测速度提升。）
+
+		不建议开机自检，如果损坏了99%，可以接受，但自检删除所有了数据。
+
+10）格式化：支持数据能结构化管理的机制
+11）文件系统组成：
+	内核中模块
+	用户空间的管理工具：mkfs.vfat, mkfs.xfs, mkfs.btrfs, mkfs.ext4
+12）文件系统过多，每个文件系统的调用接口不一样
+	任何时候当两个层次不一样时，添加一个中间层
+	vfs: 将不同的文件系统统一在同一个接口，程序员只要调用VFS,就可以操作任何文件系统。
+13）创建文件系统：
+	1）内核支持的模块
+	2）用户空间管理工具
+14）SUN技术很牛，但经营不当；那个时代的悲剧
+	邋遢、沟通、不会聊天
+	同理心、换位思考、瞎扯能力
+15）ext4过滤时期的文件系统
+16）超级块：整个分区的结构划分
+	整个空间组数、每组起始编号 ....
+	每个组内多少个块free, 多少个块占用。
+
+17）将整个文件系统分成N个块，将部分块分成块组；
+	每个块组内有相同数量的磁盘块。
+	每个块组是个独立管理的子逻辑。
+
+18）超级块不能挂了，需要备份超级块：格式化时，会自动备份：super block backup.
+19）每个元数据条目是个inode
+
+命令lcnix：
+1）创建文件系统：
+	1）内核支持的模块：lsmod
+	2）用户空间管理工具: mkfs + 2TAB(mkfs.btrfs   mkfs.cramfs  mkfs.ext2    mkfs.ext3    mkfs.ext4    mkfs.minix   mkfs.xfs mkswap)
+
+2）查看支持的文件系统：cat /proc/filesystems
+	没有udev的是正在使用的文件系统。
+
+3）man mkfs.btrfs
+	-A
+	-b
+	-d
+	-f
+	-n
+	-L 
+
+4）mkfs.ext4 mkfs.xfs mkfs.btrfs mkswap
+
+5）ext4
+	mkfs.FS_TYE [-L label] 分区
+	mkfs -t FS_TYPE [-L label] 分区
+
+	FS_TYPE: ext4, xfs, btrfs
+
+	eg:
+	mkfs.xfs /dev/sda5
+	mkfs.ext4 /dev/sda5
+	mkfs.btrfs /dev/sda5
+
+	注意：格式化会删除原磁盘中所有数据。
+
+   swap
+   	  1）调整id为82；Linux swap / Solaris
+   	  2）mkswap  [-L label] [-u UUID] 分区
+   	  3）blkid /dev/sda6
+
+   	  swapon
+   	  swapoff
+   	  free 
+
+6）查看分区的属性信息
+	blkid 分区
+
+	UUID：全局惟一标识符，区别每个硬盘。
+	UUID_SUB：同一个标号下有子标号。
+	TYPE: 文件系统类型
+	LABEL: 卷标
+
+7）ext系列
+	mke2fs [OPTIONS...] 分区
+		-t ext{2|3|4} <默认ext2>
+		-b 1024|2048|4096 块大小KB <默认4096> 存储大文件多，块大。
+		-i # 数据空间多大块大小对应一个inode。一般不小于块大小（否则将浪费inode）。
+		-N # inode总数
+		-L label
+		-j 相当于 mke2fs -j == mke2fs -t ext3 -b 4096 == mkfs.ext3 == mkfs -t ext3 == mke2fs -O has_journal
+		-m # 管理员预留空间占据百分比 <默认5%>
+		-O  FEATURE[,...] 启用特性 has_journal
+		   ^FEATURE[,...] 关闭特性
+
+		注意：磁盘可用空间取决于block和inode剩余。
+
+8）blkid 
+	查看块属性：blkid /dev/sda5
+	根据UUID找设备：blkid -U UUID
+	根据LABEL找设备：blkid -L LABEL
+
+9）e2label
+	查看label: e2label /dev/sda5
+	设定label: e2label /dev/sda5 LABEL
+
+10）tune2fs重设ext系列文件系统可调整参数值
+	-l device 查看超级块；
+	-L label 修改label
+	-m #     空闲百分比
+	-j 打开日志功能
+	-O  FEATURE[,...] 启用特性 has_journal
+	   ^FEATURE[,...] 关闭特性
+	-o  Default_mount_options  acl <c7默认有acl. c6需要手动打开>
+	   ^Default_mount_options
+	-u UUID 修改UUID号(uuidgen)
+
+11）dumpe2fs 
+	-h device 查看超级块
+		Filesystem volume name 卷标
+		Last mounted on        最近一次挂载时间
+		Filesystem UUID         UUID
+		Filesystem magic number 魔数
+		Filesystem revision #
+		Filesystem features     特性-O
+		Filesystem flags        
+		Default mount options   默认挂载选项-o 
+		Filesystem state        当前状态
+		Errors behavior
+		Filesystem OS type
+		Inode count             每个元数据条目是个inode。inode数
+		Block count         
+		Reserved block count
+		Free blocks             -
+		Free inodes 			-
+
+	整个文件系统的布局信息：dumpe2fs /dev/sda5
+		多少个组
+		每组内：
+			Block bitmap
+			Inode bitmap
+			Inode表
+			free blocks
+			free inodes
+			可用块数
+			可用inode数
+
+12）文件系统检测 File System Check
+	fsck.FS_TYPE
+	fsck -t FS_TYPE
+	fsck 
+		-a 自动修复
+		-n 不修复
+		-r 交互式修复
+		-y 回答yes
+	e2fsck - check a Linux ext2/ext3/ext4 file system
+		-y 回答yes
+		-f 即使文件系统正常，也强制修复
+
+	将文件系统 创建、修改、检测 写成博客
+
+
+文件系统挂载与管理工具(01)_recv
+LINGO：
+1）
+2）
+3）
+4）
+5）
+6）
+7）
+8）
+9）
+10）
+11）
+12）
+13）
+14）
+15）
+16）
+17）
+18）
+19）
+20）
+21）
+22）
+23）
+24）
+25）
+26）
+27）
+28）
+29）
+
+命令lcnix：
+1）
+2）
+3）
+4）
+5）
+6）
 7）
 8）
 9）
