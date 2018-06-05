@@ -1249,7 +1249,7 @@ LINGO
 	-W
 	-E
 
-13） chfn 相当于chmod -c 'GECOS'
+13） chfn 相当于usermod -c 'GECOS'
 14）finger 查看用户详细信息
 15）chsh 修改默认sh.
 
