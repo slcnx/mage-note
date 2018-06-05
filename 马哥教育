@@ -1289,6 +1289,13 @@ LINGO
 	设定：umask=value
 	配置文件中定义：/etc/profile.d/*.sh, /etc/profile, ~/.bash_profile
 
+修改shadow中的字段
+chage -d YYYY-MM-DD user
+passwd -n # user
+passwd -x # user
+passwd -w # user
+passwd -i # user
+usermod -e YYYY-MM-DD user
 
 文件管理、用户管理、权限管理、bash基础特性
 	文件管理：cp, mv, rm
